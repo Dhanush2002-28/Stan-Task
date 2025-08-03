@@ -67,7 +67,7 @@ const conversationSchema = new mongoose.Schema({
     context: {
         conversationType: {
             type: String,
-            enum: ['casual', 'support', 'advice', 'venting', 'celebration', 'problem_solving'],
+            enum: ['casual', 'support', 'advice', 'venting', 'celebration', 'problem_solving', 'onboarding'],
             default: 'casual'
         },
         urgency: {

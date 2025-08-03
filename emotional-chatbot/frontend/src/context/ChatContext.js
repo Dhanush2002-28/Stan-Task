@@ -145,7 +145,7 @@ export const ChatProvider = ({ children }) => {
 
             // Check if user exists in backend (regardless of localStorage)
             const profile = await apiService.getUserProfile(userId);
-            
+
             if (profile && profile.name && profile.personalNumber !== undefined && profile.birthMonth) {
                 // User exists and has completed onboarding
                 dispatch({ type: ActionTypes.SET_NEW_USER, payload: false });
