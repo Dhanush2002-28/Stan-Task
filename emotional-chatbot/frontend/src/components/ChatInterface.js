@@ -100,7 +100,7 @@ const ChatInterface = () => {
                         <Brain size={32} color="white" />
                     </motion.div>
                     <h1 style={{ fontSize: '2rem', fontWeight: '700', margin: 0 }}>
-                        Alex
+                        Stan
                     </h1>
                     <EmotionalStatus status={connectionStatus} />
                 </div>
@@ -150,7 +150,7 @@ const ChatInterface = () => {
                             </motion.div>
 
                             <h2 style={{ fontSize: '1.8rem', marginBottom: '15px', color: 'white' }}>
-                                Hello! I'm Alex 👋
+                                Hello! I'm Stan 👋
                             </h2>
 
                             <p style={{

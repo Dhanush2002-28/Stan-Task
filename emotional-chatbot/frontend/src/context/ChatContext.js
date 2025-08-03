@@ -195,7 +195,7 @@ export const ChatProvider = ({ children }) => {
         const welcomeMessage = {
             id: uuidv4(),
             role: 'assistant',
-            content: "Hello! I'm Alex, your personal AI companion. I'm here to chat, listen, and get to know you better. I'd love to learn a bit about you so I can provide more personalized conversations. What's your name?",
+            content: "Hello! I'm here to chat, listen, and get to know you better. I'd love to learn a bit about you so I can provide more personalized conversations. What's your name?",
             timestamp: new Date().toISOString(),
             metadata: { isOnboarding: true, step: 1 },
         };

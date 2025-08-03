@@ -1,4 +1,4 @@
-const https = require('https');
+ const https = require('https');
 
 class KeepAliveService {
     constructor(url, interval = 14 * 60 * 1000) { // 14 minutes
