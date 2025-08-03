@@ -88,11 +88,20 @@ app.use('/api/memory', memoryRoutes);
 
 // Health check endpoint (under /api for consistency)
 app.get('/api/health', (req, res) => {
+    const envCheck = {
+        mongodbConnected: mongoose.connection.readyState === 1,
+        hasGroqKey: !!process.env.GROQ_API_KEY,
+        hasHuggingFaceKey: !!process.env.HUGGINGFACE_API_KEY,
+        corsOrigins: process.env.CORS_ORIGINS,
+        nodeEnv: process.env.NODE_ENV
+    };
+
     res.status(200).json({
         status: 'OK',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        environment: process.env.NODE_ENV
+        environment: process.env.NODE_ENV,
+        envCheck
     });
 });
 
