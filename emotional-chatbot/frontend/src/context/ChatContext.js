@@ -127,16 +127,13 @@ export const ChatProvider = ({ children }) => {
         try {
             // Get or create user ID
             let userId = localStorage.getItem('chatbot_user_id');
-            let isNewUser = false;
 
             if (!userId) {
                 userId = uuidv4();
                 localStorage.setItem('chatbot_user_id', userId);
-                isNewUser = true;
             }
 
             dispatch({ type: ActionTypes.SET_USER_ID, payload: userId });
-            dispatch({ type: ActionTypes.SET_NEW_USER, payload: isNewUser });
 
             // Create session
             const sessionId = uuidv4();
@@ -146,18 +143,25 @@ export const ChatProvider = ({ children }) => {
             await apiService.checkHealth();
             dispatch({ type: ActionTypes.SET_CONNECTION_STATUS, payload: 'connected' });
 
-            // Load user profile and chat history for returning users
-            if (!isNewUser) {
-                await loadUserProfile(userId);
+            // Check if user exists in backend (regardless of localStorage)
+            const profile = await apiService.getUserProfile(userId);
+            
+            if (profile && profile.name && profile.personalNumber !== undefined && profile.birthMonth) {
+                // User exists and has completed onboarding
+                dispatch({ type: ActionTypes.SET_NEW_USER, payload: false });
+                dispatch({ type: ActionTypes.SET_USER_PROFILE, payload: profile });
+                dispatch({ type: ActionTypes.SET_ONBOARDING_COMPLETE, payload: true });
                 await loadConversationHistory(userId);
-
-                // Check if user has completed onboarding
-                const profile = await apiService.getUserProfile(userId);
-                if (profile && profile.name && profile.personalNumber !== undefined && profile.birthMonth) {
-                    dispatch({ type: ActionTypes.SET_ONBOARDING_COMPLETE, payload: true });
-                }
+            } else if (profile && profile.name) {
+                // User exists but hasn't completed onboarding
+                dispatch({ type: ActionTypes.SET_NEW_USER, payload: false });
+                dispatch({ type: ActionTypes.SET_USER_PROFILE, payload: profile });
+                dispatch({ type: ActionTypes.SET_ONBOARDING_COMPLETE, payload: false });
+                await loadConversationHistory(userId);
             } else {
-                // For new users, start onboarding
+                // User doesn't exist in backend - start onboarding
+                dispatch({ type: ActionTypes.SET_NEW_USER, payload: true });
+                dispatch({ type: ActionTypes.SET_ONBOARDING_COMPLETE, payload: false });
                 await startOnboarding();
             }
 
@@ -190,18 +194,6 @@ export const ChatProvider = ({ children }) => {
 
         return () => clearInterval(interval);
     }, [state.connectionStatus]);
-
-    const loadUserProfile = async (userId) => {
-        try {
-            const profile = await apiService.getUserProfile(userId);
-            if (profile) {
-                dispatch({ type: ActionTypes.SET_USER_PROFILE, payload: profile });
-            }
-        } catch (error) {
-            console.error('Failed to load user profile:', error);
-            // Don't show error toast for profile loading - it's not critical
-        }
-    };
 
     const loadConversationHistory = async (userId) => {
         try {
@@ -427,6 +419,11 @@ export const ChatProvider = ({ children }) => {
         updateUserProfile,
         identifyReturningUser,
         clearError: () => dispatch({ type: ActionTypes.CLEAR_ERROR }),
+        // Utility function to reset session (for testing)
+        resetSession: () => {
+            localStorage.removeItem('chatbot_user_id');
+            window.location.reload();
+        },
     };
 
     return (
