@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 
 const ChatInterface = () => {
     const [message, setMessage] = useState('');
-    const [showWelcome, setShowWelcome] = useState(true);
+    const [showWelcome, setShowWelcome] = useState(false); // Default to false
     const [showUserIdentification, setShowUserIdentification] = useState(false);
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
@@ -29,11 +29,18 @@ const ChatInterface = () => {
         scrollToBottom();
     }, [messages, isLoading]);
 
+    // Show welcome screen only for returning users with no active conversation
     useEffect(() => {
-        if (messages.length > 0) {
+        // Show welcome if:
+        // 1. Not a new user (returning user)
+        // 2. Onboarding is complete 
+        // 3. No messages yet
+        if (!isNewUser && onboardingComplete && messages.length === 0) {
+            setShowWelcome(true);
+        } else {
             setShowWelcome(false);
         }
-    }, [messages]);
+    }, [isNewUser, onboardingComplete, messages.length]);
 
     // Show identification modal for new users after they see the welcome message
     useEffect(() => {
