@@ -655,16 +655,37 @@ async function handleOnboardingFlow(message, user, currentMessages) {
             const month = monthMap[monthMatch[1].toLowerCase()];
             user.profile.birthMonth = month;
 
-            // Create unique key
-            user.uniqueKey = `${user.profile.name}-${user.profile.personalNumber}-${month}`;
+            // Create unique key for identification
+            const userUniqueKey = `${user.profile.name}-${user.profile.personalNumber}-${month}`;
 
-            // Set some defaults and complete onboarding
-            user.profile.age = null; // Will be filled naturally in conversation
-            user.profile.interests = null; // Will be learned through conversation
-            user.profile.currentMood = 'neutral'; // Default starting mood
-            user.profile.emotionalState.current = 'neutral';
+            // Check if a user with this unique key already exists
+            const existingUser = await User.findOne({ uniqueKey: userUniqueKey });
 
-            return `Great, ${user.profile.name}! I'll remember you now. I'm here to listen and support you. How are you feeling today? What's on your mind?`;
+            if (existingUser) {
+                // This is a returning user!
+                // Delete the temporary user record
+                await User.deleteOne({ userId: user.userId });
+
+                // Update last interaction for existing user
+                existingUser.relationships.lastInteraction = new Date();
+                await existingUser.save();
+
+                // Replace the current user with existing user data
+                Object.assign(user, existingUser.toObject());
+
+                return `Welcome back, ${existingUser.profile.name}! I remember you now. It's so good to see you again! How have you been since we last talked?`;
+            } else {
+                // New user - complete the onboarding
+                user.uniqueKey = userUniqueKey;
+
+                // Set some defaults and complete onboarding
+                user.profile.age = null; // Will be filled naturally in conversation
+                user.profile.interests = null; // Will be learned through conversation
+                user.profile.currentMood = 'neutral'; // Default starting mood
+                user.profile.emotionalState.current = 'neutral';
+
+                return `Great, ${user.profile.name}! I'll remember you now. I'm here to listen and support you. How are you feeling today? What's on your mind?`;
+            }
         } else {
             return "Could you tell me your birth month? Like 'January' or 'Jan'?";
         }

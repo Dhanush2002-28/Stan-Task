@@ -125,14 +125,8 @@ export const ChatProvider = ({ children }) => {
 
     const initializeSession = useCallback(async () => {
         try {
-            // Get or create user ID
-            let userId = localStorage.getItem('chatbot_user_id');
-
-            if (!userId) {
-                userId = uuidv4();
-                localStorage.setItem('chatbot_user_id', userId);
-            }
-
+            // Always generate a new temporary user ID for session
+            const userId = uuidv4();
             dispatch({ type: ActionTypes.SET_USER_ID, payload: userId });
 
             // Create session
@@ -143,27 +137,10 @@ export const ChatProvider = ({ children }) => {
             await apiService.checkHealth();
             dispatch({ type: ActionTypes.SET_CONNECTION_STATUS, payload: 'connected' });
 
-            // Check if user exists in backend (regardless of localStorage)
-            const profile = await apiService.getUserProfile(userId);
-
-            if (profile && profile.name && profile.personalNumber !== undefined && profile.birthMonth) {
-                // User exists and has completed onboarding
-                dispatch({ type: ActionTypes.SET_NEW_USER, payload: false });
-                dispatch({ type: ActionTypes.SET_USER_PROFILE, payload: profile });
-                dispatch({ type: ActionTypes.SET_ONBOARDING_COMPLETE, payload: true });
-                await loadConversationHistory(userId);
-            } else if (profile && profile.name) {
-                // User exists but hasn't completed onboarding
-                dispatch({ type: ActionTypes.SET_NEW_USER, payload: false });
-                dispatch({ type: ActionTypes.SET_USER_PROFILE, payload: profile });
-                dispatch({ type: ActionTypes.SET_ONBOARDING_COMPLETE, payload: false });
-                await loadConversationHistory(userId);
-            } else {
-                // User doesn't exist in backend - start onboarding
-                dispatch({ type: ActionTypes.SET_NEW_USER, payload: true });
-                dispatch({ type: ActionTypes.SET_ONBOARDING_COMPLETE, payload: false });
-                await startOnboarding();
-            }
+            // Always start with onboarding - let the 3 questions determine if returning user
+            dispatch({ type: ActionTypes.SET_NEW_USER, payload: true });
+            dispatch({ type: ActionTypes.SET_ONBOARDING_COMPLETE, payload: false });
+            await startOnboarding();
 
         } catch (error) {
             console.error('Failed to initialize session:', error);
@@ -277,6 +254,21 @@ export const ChatProvider = ({ children }) => {
             if (response.onboardingComplete && !onboardingComplete) {
                 dispatch({ type: ActionTypes.SET_ONBOARDING_COMPLETE, payload: true });
                 toast.success('Great! Now I know you better. Let\'s chat!');
+            }
+
+            // Check if this is a returning user detection
+            if (response.metadata && response.metadata.isReturningUser) {
+                // Update context for returning user
+                dispatch({ type: ActionTypes.SET_NEW_USER, payload: false });
+                dispatch({ type: ActionTypes.SET_ONBOARDING_COMPLETE, payload: true });
+
+                // Store the actual user ID in localStorage for future sessions
+                localStorage.setItem('chatbot_user_id', state.userId);
+
+                // Load conversation history for returning user
+                await loadConversationHistory(state.userId);
+
+                toast.success('Welcome back! I remember you now.');
             }
 
             dispatch({ type: ActionTypes.SET_CONNECTION_STATUS, payload: 'connected' });

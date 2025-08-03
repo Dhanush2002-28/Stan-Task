@@ -1,17 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Heart, Brain, Sparkles, MessageCircle, User } from 'lucide-react';
+import { Send, Heart, Brain, Sparkles, MessageCircle } from 'lucide-react';
 import { useChat } from '../context/ChatContext';
 import Message from './Message';
 import TypingIndicator from './TypingIndicator';
 import EmotionalStatus from './EmotionalStatus';
-import UserIdentification from './UserIdentification';
 import toast from 'react-hot-toast';
 
 const ChatInterface = () => {
     const [message, setMessage] = useState('');
     const [showWelcome, setShowWelcome] = useState(false); // Default to false
-    const [showUserIdentification, setShowUserIdentification] = useState(false);
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
 
@@ -288,46 +286,6 @@ const ChatInterface = () => {
                     <Send size={20} />
                 </motion.button>
             </motion.form>
-
-            {/* Returning User Button - Show for new users */}
-            {isNewUser && !onboardingComplete && messages.length > 0 && (
-                <motion.button
-                    onClick={() => setShowUserIdentification(true)}
-                    className="returning-user-button"
-                    style={{
-                        position: 'fixed',
-                        top: '20px',
-                        right: '20px',
-                        background: 'rgba(255, 255, 255, 0.1)',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: '10px',
-                        padding: '8px 12px',
-                        color: 'white',
-                        fontSize: '0.8rem',
-                        cursor: 'pointer',
-                        zIndex: 1000,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '5px'
-                    }}
-                    whileHover={{ scale: 1.05, background: 'rgba(255, 255, 255, 0.15)' }}
-                    whileTap={{ scale: 0.95 }}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 4 }}
-                >
-                    <User size={14} />
-                    Returning User?
-                </motion.button>
-            )}
-
-            {/* User Identification Modal */}
-            {showUserIdentification && (
-                <UserIdentification
-                    onClose={() => setShowUserIdentification(false)}
-                />
-            )}
 
             {/* User Profile Info (subtle) */}
             {userProfile && (
