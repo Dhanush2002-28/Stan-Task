@@ -10,7 +10,7 @@
 
 STAN is a comprehensive emotional AI companion built with cutting-edge memory capabilities, emotional intelligence, and behavioral consistency. It provides personalized therapeutic conversations while maintaining strict behavioral standards through comprehensive testing.
 
-![STAN Demo](https://via.placeholder.com/800x400/6366f1/ffffff?text=STAN+Emotional+Chatbot+Demo)
+![STAN Demo](https://emotionalaicompanion.vercel.app/)
 
 ## 🎯 Key Features
 
