@@ -279,19 +279,30 @@ export const ChatProvider = ({ children }) => {
         } catch (error) {
             console.error('Failed to send message:', error);
 
-            // Add error message
+            // Check if this might be a cold start (server sleeping)
+            const isColdStart = error.message.includes('timeout') ||
+                error.message.includes('ECONNREFUSED') ||
+                error.message.includes('500');
+
+            // Add appropriate error message
             const errorMessage = {
                 id: uuidv4(),
                 role: 'assistant',
-                content: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment. Your feelings and thoughts are important to me, and I want to make sure I can give you the attention you deserve.",
+                content: isColdStart
+                    ? "I'm just waking up! The server was sleeping, but I'm ready now. Please try sending your message again."
+                    : "I'm sorry, I'm having trouble connecting right now. Please try again in a moment. Your feelings and thoughts are important to me, and I want to make sure I can give you the attention you deserve.",
                 timestamp: new Date().toISOString(),
-                metadata: { isError: true },
+                metadata: { isError: true, isColdStart },
             };
 
             dispatch({ type: ActionTypes.ADD_MESSAGE, payload: errorMessage });
             dispatch({ type: ActionTypes.SET_ERROR, payload: error.message });
 
-            toast.error('Failed to send message. Please try again.');
+            if (isColdStart) {
+                toast.error('Server was sleeping. Please try again!');
+            } else {
+                toast.error('Failed to send message. Please try again.');
+            }
         } finally {
             dispatch({ type: ActionTypes.SET_LOADING, payload: false });
         }

@@ -19,6 +19,9 @@ const memoryRoutes = require('./routes/memory');
 const errorHandler = require('./middleware/errorHandler');
 const requestLogger = require('./middleware/requestLogger');
 
+// Import services
+const KeepAliveService = require('./services/keepAlive');
+
 // Initialize Express app
 const app = express();
 
@@ -152,9 +155,14 @@ const startServer = async () => {
             logger.info(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
         });
 
+        // Initialize keep-alive service for production
+        const keepAlive = new KeepAliveService(process.env.RENDER_EXTERNAL_URL || process.env.BASE_URL);
+        keepAlive.start();
+
         // Graceful shutdown
         process.on('SIGTERM', () => {
             logger.info('SIGTERM received. Shutting down gracefully...');
+            keepAlive.stop();
             server.close(() => {
                 mongoose.connection.close();
                 process.exit(0);
@@ -163,6 +171,7 @@ const startServer = async () => {
 
         process.on('SIGINT', () => {
             logger.info('SIGINT received. Shutting down gracefully...');
+            keepAlive.stop();
             server.close(() => {
                 mongoose.connection.close();
                 process.exit(0);
