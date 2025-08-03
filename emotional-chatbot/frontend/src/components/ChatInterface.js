@@ -42,17 +42,8 @@ const ChatInterface = () => {
         }
     }, [isNewUser, onboardingComplete, messages.length]);
 
-    // Show identification modal for new users after they see the welcome message
-    useEffect(() => {
-        if (isNewUser && messages.length === 1 && !onboardingComplete) {
-            // Give user a chance to see if they're returning
-            const timer = setTimeout(() => {
-                setShowUserIdentification(true);
-            }, 3000); // 3 seconds after first message
-
-            return () => clearTimeout(timer);
-        }
-    }, [isNewUser, messages, onboardingComplete]);
+    // Show identification modal only when manually triggered
+    // Removed automatic trigger since we now properly handle new vs returning users in ChatContext
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
