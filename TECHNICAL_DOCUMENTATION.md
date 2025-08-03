@@ -791,62 +791,567 @@ Content-Type: application/json
 
 ## 🧪 Testing & Quality Assurance
 
-### Backend Testing
+### Comprehensive Testing Infrastructure
 
-```bash
-# Unit Tests
-npm test
+The STAN chatbot includes a robust testing framework designed to validate behavioral requirements, system functionality, and user experience quality. The testing suite ensures that the chatbot passes all critical behavioral test cases while maintaining high code quality and reliability.
 
-# Integration Tests
-npm run test:integration
+### Testing Architecture
 
-# API Testing with Supertest
-npm run test:api
+```
+testing/
+├── behavioral-tests/              # AI Behavioral Validation
+│   ├── behavioral-tests.test.js   # Jest-based behavioral tests
+│   ├── manual-test.js             # Interactive testing tool
+│   ├── health-check.js            # Server connectivity validation
+│   └── setup.js                   # Test environment configuration
+├── unit-tests/                    # Component Testing
+│   ├── services/                  # Service layer tests
+│   ├── models/                    # Database model tests
+│   └── routes/                    # API endpoint tests
+├── integration-tests/             # Full Stack Testing
+│   ├── api-integration.test.js    # API workflow tests
+│   └── database-integration.test.js # Database operation tests
+└── e2e-tests/                     # End-to-End Testing
+    ├── user-journey.test.js       # Complete user flows
+    └── onboarding.test.js          # User onboarding validation
 ```
 
-### Frontend Testing
+---
 
-```bash
-# Component Tests
-npm test
+## 🎯 Behavioral Testing Suite
 
-# E2E Tests
-npm run test:e2e
+### Critical Test Cases
 
-# Coverage Report
-npm run test:coverage
+The STAN chatbot must pass **8 critical behavioral test cases** that validate its AI capabilities and user interaction quality:
+
+#### 1. **Long-term Memory Recall Test**
+
+**Requirement**: Remember information shared 10+ messages ago
+
+```javascript
+// Test validates memory persistence across extended conversations
+test("Should recall information after 10+ intervening messages", async () => {
+  // Share important information
+  await sendMessage("My favorite color is blue and I study at MIT");
+
+  // Send 12 filler messages
+  for (let i = 0; i < 12; i++) {
+    await sendMessage(`Filler message ${i + 1}`);
+  }
+
+  // Test recall
+  const response = await sendMessage(
+    "What's my favorite color and where do I study?"
+  );
+  expect(response).toMatch(/blue.*MIT|MIT.*blue/i);
+});
 ```
 
-### Manual Testing Scenarios
+#### 2. **Tone Adaptation Test**
 
-#### 1. New User Onboarding
+**Requirement**: Adapt communication style when requested
 
-1. Visit application
-2. Verify automatic onboarding start
-3. Provide name, number, birth month
-4. Confirm new user profile creation
-5. Test conversation functionality
+```javascript
+// Test validates dynamic tone adjustment capabilities
+test("Should adapt from casual to formal tone", async () => {
+  await sendMessage("Hey! What's up?");
+  await sendMessage("Please speak more formally");
 
-#### 2. Returning User Detection
+  const response = await sendMessage("How are you today?");
+  expect(response).not.toMatch(/hey|what's up|cool|awesome/i);
+  expect(response.length).toBeGreaterThan(50); // More elaborate formal response
+});
+```
 
-1. Complete onboarding with known credentials
-2. Verify automatic user recognition
-3. Check conversation history loading
-4. Confirm personalized welcome message
+#### 3. **Personal Information Accuracy Test**
 
-#### 3. Memory System
+**Requirement**: Never confuse details between users
 
-1. Share personal information during conversation
-2. Verify memory extraction and storage
-3. Test memory retrieval in subsequent messages
-4. Confirm emotional context preservation
+```javascript
+// Test validates user data isolation
+test("Should not confuse user details", async () => {
+  // User 1 shares information
+  await sendMessage("I play guitar and work as a developer", {
+    userId: "user1",
+  });
 
-#### 4. Error Handling
+  // User 2 shares different information
+  await sendMessage("I paint and work as a teacher", { userId: "user2" });
 
-1. Test offline scenarios
-2. Verify graceful API failures
-3. Check cold start recovery
-4. Confirm user feedback systems
+  // Verify no cross-contamination
+  const response1 = await sendMessage("What are my hobbies?", {
+    userId: "user1",
+  });
+  expect(response1).toMatch(/guitar/i);
+  expect(response1).not.toMatch(/paint/i);
+});
+```
+
+#### 4. **Response Diversity Test**
+
+**Requirement**: Provide varied responses to similar questions
+
+```javascript
+// Test validates response variation mechanisms
+test("Should provide diverse responses to repeated questions", async () => {
+  const responses = [];
+  for (let i = 0; i < 5; i++) {
+    const response = await sendMessage("How are you today?");
+    responses.push(response);
+  }
+
+  const uniqueResponses = new Set(responses);
+  expect(uniqueResponses.size).toBeGreaterThan(2); // At least 60% unique
+});
+```
+
+#### 5. **Identity Consistency Test**
+
+**Requirement**: Always identify as "Stan", never break character
+
+```javascript
+// Test validates character consistency
+test("Should consistently identify as Stan", async () => {
+  const identityQuestions = [
+    "What's your name?",
+    "Who are you?",
+    "Tell me about yourself",
+  ];
+
+  for (const question of identityQuestions) {
+    const response = await sendMessage(question);
+    expect(response.toLowerCase()).toMatch(/stan/);
+    expect(response.toLowerCase()).not.toMatch(/alex|gpt|assistant|claude/);
+  }
+});
+```
+
+#### 6. **Contradictory Information Test**
+
+**Requirement**: Handle conflicting information gracefully
+
+```javascript
+// Test validates contradiction resolution
+test("Should handle contradictory information", async () => {
+  await sendMessage("I'm 25 years old");
+  const response = await sendMessage("Actually, I'm 30 years old");
+
+  expect(response.toLowerCase()).toMatch(/update|change|correction/);
+
+  // Verify updated information is stored
+  const verification = await sendMessage("How old am I?");
+  expect(verification).toMatch(/30|thirty/);
+});
+```
+
+#### 7. **Hallucination Resistance Test**
+
+**Requirement**: Never fabricate unknown information
+
+```javascript
+// Test validates anti-hallucination measures
+test("Should resist hallucinating user information", async () => {
+  const probingQuestions = [
+    "What's my middle name?",
+    "What car do I drive?",
+    "Who is my best friend?",
+  ];
+
+  for (const question of probingQuestions) {
+    const response = await sendMessage(question);
+    expect(response.toLowerCase()).toMatch(
+      /don't know|not sure|haven't mentioned/
+    );
+    expect(response.toLowerCase()).not.toMatch(/your .* is|you drive/);
+  }
+});
+```
+
+#### 8. **Memory Stability Test**
+
+**Requirement**: Maintain consistent information across sessions
+
+```javascript
+// Test validates cross-session memory persistence
+test("Should maintain memory across different sessions", async () => {
+  // Share information in session 1
+  await sendMessage("I'm vegetarian", { sessionId: "session1" });
+
+  // Start new session
+  const response = await sendMessage("What do you know about my diet?", {
+    sessionId: "session2",
+  });
+  expect(response.toLowerCase()).toMatch(/vegetarian/);
+});
+```
+
+---
+
+## 🛠️ Testing Infrastructure
+
+### Automated Test Suite
+
+#### **Jest Configuration** (`jest.config.json`)
+
+```json
+{
+  "testEnvironment": "node",
+  "testMatch": ["**/tests/**/*.test.js"],
+  "collectCoverageFrom": [
+    "src/**/*.js",
+    "!src/config/**",
+    "!**/node_modules/**"
+  ],
+  "setupFilesAfterEnv": ["./tests/setup.js"],
+  "testTimeout": 30000
+}
+```
+
+#### **Test Setup** (`tests/setup.js`)
+
+```javascript
+// Global test configuration
+process.env.NODE_ENV = "test";
+process.env.MONGODB_URI = "mongodb://localhost:27017/chatbot_test";
+
+// Custom Jest matchers
+expect.extend({
+  toContainIgnoreCase(received, expected) {
+    const pass = received.toLowerCase().includes(expected.toLowerCase());
+    return {
+      pass,
+      message: () => `Expected "${received}" to contain "${expected}"`,
+    };
+  },
+});
+
+// Test utilities
+global.testUtils = {
+  generateTestUser: (overrides = {}) => ({
+    userId: `test_${Date.now()}_${Math.random()}`,
+    profile: { name: "TestUser", age: 25, ...overrides },
+  }),
+  delay: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+};
+```
+
+### Manual Testing Tools
+
+#### **Interactive Testing Script** (`manual-test.js`)
+
+```bash
+# Run interactive behavioral tests
+node manual-test.js
+
+# Choose test mode:
+# 1. Full automated suite
+# 2. Interactive testing only
+```
+
+**Features:**
+
+- **Real-time Behavioral Validation**: Tests all 8 behavioral requirements
+- **Interactive Chat Mode**: Manual conversation testing
+- **Automated Scoring**: Pass/fail analysis with detailed feedback
+- **Server Health Checks**: Connectivity validation
+- **Progress Tracking**: Live test results and summaries
+
+#### **Health Check Utility** (`health-check.js`)
+
+```bash
+# Validate server functionality
+npm run test:health
+```
+
+**Validates:**
+
+- Server connectivity and responsiveness
+- API endpoint functionality
+- Database connection stability
+- Basic chat functionality
+- Identity consistency
+
+### Test Execution Commands
+
+```bash
+# Backend Testing
+npm test                    # Run all tests
+npm run test:behavioral     # Behavioral tests only
+npm run test:manual         # Interactive manual testing
+npm run test:health         # Server health check
+npm run test:all           # Health check + behavioral tests
+
+# Frontend Testing
+npm test                    # Component tests
+npm run test:e2e           # End-to-end tests
+npm run test:coverage      # Coverage report
+
+# Full Stack Testing
+docker-compose -f docker-compose.test.yml up
+```
+
+---
+
+## 📊 Test Coverage & Quality Metrics
+
+### Expected Test Results
+
+A fully compliant STAN chatbot should achieve:
+
+| Test Category                | Target Score | Validation Criteria                   |
+| ---------------------------- | ------------ | ------------------------------------- |
+| **Identity Consistency**     | 100%         | Always identifies as "Stan"           |
+| **Memory Recall**            | 90%+         | Remembers info after 10+ messages     |
+| **Tone Adaptation**          | 90%+         | Adapts style within 2 exchanges       |
+| **Hallucination Resistance** | 100%         | Zero fabricated information           |
+| **Response Diversity**       | 60%+         | Unique responses to similar questions |
+| **Information Accuracy**     | 100%         | No cross-user data confusion          |
+| **Contradiction Handling**   | 85%+         | Graceful information updates          |
+| **Memory Stability**         | 95%+         | Cross-session data persistence        |
+
+### Coverage Requirements
+
+```bash
+# Minimum coverage thresholds
+Statements: 80%
+Branches: 75%
+Functions: 85%
+Lines: 80%
+```
+
+### Performance Benchmarks
+
+| Metric               | Target | Measurement                     |
+| -------------------- | ------ | ------------------------------- |
+| **Response Time**    | <2s    | Average LLM response generation |
+| **Memory Retrieval** | <500ms | Context assembly time           |
+| **Database Queries** | <100ms | User/memory lookups             |
+| **API Latency**      | <200ms | HTTP request processing         |
+
+---
+
+## 🔧 Testing Best Practices
+
+### Test Development Guidelines
+
+#### 1. **Behavioral Test Writing**
+
+```javascript
+// Good: Specific, measurable behavioral test
+test("Should remember user preferences across 15+ message conversation", async () => {
+  await sharePreference("I prefer brief responses");
+  await generateFillerMessages(15);
+  const response = await askQuestion("How should I communicate with you?");
+  expect(response).toIndicatePreferenceRecall();
+});
+
+// Avoid: Vague or unmeasurable tests
+test("Should be smart", async () => {
+  const response = await sendMessage("Hello");
+  expect(response).toBeTruthy(); // Too generic
+});
+```
+
+#### 2. **Memory Validation**
+
+```javascript
+// Validate memory extraction and retrieval
+const testMemorySystem = async () => {
+  // Share specific information
+  await sendMessage("My dog's name is Max and he's a Golden Retriever");
+
+  // Verify memory extraction
+  const memories = await getMemories(userId);
+  expect(memories).toContainMemoryType("pet_information");
+
+  // Test retrieval in conversation
+  const response = await sendMessage("Tell me about my pet");
+  expect(response).toMatch(/Max.*Golden Retriever|Golden Retriever.*Max/);
+};
+```
+
+#### 3. **Error Scenario Testing**
+
+```javascript
+// Test graceful degradation
+test("Should handle LLM API failures gracefully", async () => {
+  // Mock API failure
+  mockGroqAPI.mockRejectedValue(new Error("API Unavailable"));
+
+  const response = await sendMessage("Hello");
+
+  // Should use fallback response system
+  expect(response).toBeTruthy();
+  expect(response).toMatch(/I'm here|listening|support/);
+});
+```
+
+### Continuous Integration
+
+#### **GitHub Actions Workflow**
+
+```yaml
+name: STAN Behavioral Tests
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:5.0
+        ports:
+          - 27017:27017
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run health checks
+        run: npm run test:health
+
+      - name: Run behavioral tests
+        run: npm run test:behavioral
+
+      - name: Generate coverage report
+        run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+```
+
+---
+
+## 🐛 Debugging & Troubleshooting
+
+### Common Test Failures
+
+#### **Identity Confusion**
+
+```bash
+# Symptom: Bot identifies as "Alex" or other names
+# Fix: Check system prompt in llmService.js
+grep -r "Alex\|GPT\|Assistant" backend/services/
+```
+
+#### **Memory Failures**
+
+```bash
+# Symptom: Information not recalled after multiple messages
+# Debug: Check memory extraction and retrieval logic
+node -e "
+const memoryService = require('./backend/services/memoryService');
+// Test memory extraction manually
+"
+```
+
+#### **Hallucination Issues**
+
+```bash
+# Symptom: Bot fabricates unknown user information
+# Fix: Strengthen uncertainty handling in system prompt
+# Check: Anti-hallucination guidelines in buildSystemPrompt()
+```
+
+### Debug Mode
+
+Enable verbose testing output:
+
+```bash
+DEBUG=true npm run test:manual
+VERBOSE=true npm run test:behavioral
+```
+
+### Test Data Management
+
+```bash
+# Clean test database
+npm run test:cleanup
+
+# Reset test environment
+npm run test:reset
+
+# Generate test data
+npm run test:seed
+```
+
+---
+
+## 📈 Test Reporting & Analytics
+
+### Automated Reports
+
+The testing suite generates comprehensive reports:
+
+#### **Behavioral Test Report**
+
+```
+📋 STAN BEHAVIORAL TEST RESULTS
+================================
+✅ Identity Consistency: PASSED (4/4 tests)
+✅ Memory Recall: PASSED (8.5/10 accuracy)
+✅ Tone Adaptation: PASSED (within 2 exchanges)
+❌ Hallucination Resistance: FAILED (1 fabrication detected)
+✅ Response Diversity: PASSED (72% unique responses)
+✅ Information Accuracy: PASSED (perfect isolation)
+✅ Contradiction Handling: PASSED (graceful updates)
+✅ Memory Stability: PASSED (cross-session persistence)
+
+Overall Score: 7/8 tests passed (87.5%)
+```
+
+#### **Performance Metrics**
+
+```
+⏱️ PERFORMANCE BENCHMARKS
+==========================
+Response Time: 1.2s (Target: <2s) ✅
+Memory Retrieval: 245ms (Target: <500ms) ✅
+Database Queries: 78ms (Target: <100ms) ✅
+API Latency: 156ms (Target: <200ms) ✅
+```
+
+### Integration with Monitoring
+
+Test results integrate with application monitoring:
+
+- **Real-time Dashboards**: Live test status
+- **Alert Systems**: Test failure notifications
+- **Trend Analysis**: Quality metrics over time
+- **Regression Detection**: Automatic quality degradation alerts
+
+---
+
+## 🎯 Quality Assurance Process
+
+### Pre-deployment Checklist
+
+Before any deployment, ensure:
+
+- [ ] All 8 behavioral tests pass
+- [ ] Code coverage above 80%
+- [ ] Performance benchmarks met
+- [ ] Security scans completed
+- [ ] Manual testing verification
+- [ ] User acceptance testing
+- [ ] Documentation updated
+
+### Release Testing Protocol
+
+1. **Automated Test Suite**: Run full behavioral validation
+2. **Manual Verification**: Interactive testing with edge cases
+3. **Performance Testing**: Load testing and response time validation
+4. **Security Testing**: Penetration testing and vulnerability scans
+5. **User Acceptance**: Stakeholder validation of new features
+6. **Regression Testing**: Ensure existing functionality intact
+
+This comprehensive testing infrastructure ensures STAN maintains the highest quality standards while continuously validating its behavioral requirements and user experience excellence.
 
 ---
 
