@@ -262,11 +262,15 @@ export const ChatProvider = ({ children }) => {
                 dispatch({ type: ActionTypes.SET_NEW_USER, payload: false });
                 dispatch({ type: ActionTypes.SET_ONBOARDING_COMPLETE, payload: true });
 
+                // Update to use the actual user ID for returning users
+                const actualUserId = response.metadata.actualUserId || state.userId;
+                dispatch({ type: ActionTypes.SET_USER_ID, payload: actualUserId });
+
                 // Store the actual user ID in localStorage for future sessions
-                localStorage.setItem('chatbot_user_id', state.userId);
+                localStorage.setItem('chatbot_user_id', actualUserId);
 
                 // Load conversation history for returning user
-                await loadConversationHistory(state.userId);
+                await loadConversationHistory(actualUserId);
 
                 toast.success('Welcome back! I remember you now.');
             }

@@ -185,6 +185,9 @@ router.post('/message', [
                 const onboardingDone = user.profile.name && user.profile.personalNumber !== undefined &&
                     user.profile.birthMonth;
 
+                // Check if this is a returning user by seeing if userId changed
+                const isReturningUser = responseContent.includes('Welcome back') && user.userId !== userId;
+
                 return res.json({
                     success: true,
                     data: {
@@ -194,6 +197,8 @@ router.post('/message', [
                         userProfile: user.profile,
                         metadata: {
                             isOnboarding: true,
+                            isReturningUser: isReturningUser,
+                            actualUserId: user.userId, // This will be the existing user's ID for returning users
                             step: onboardingDone ? 'complete' : 'in-progress'
                         }
                     }
@@ -673,7 +678,30 @@ async function handleOnboardingFlow(message, user, currentMessages) {
                 // Replace the current user with existing user data
                 Object.assign(user, existingUser.toObject());
 
-                return `Welcome back, ${existingUser.profile.name}! I remember you now. It's so good to see you again! How have you been since we last talked?`;
+                // Get their previous conversation to provide context
+                const previousConversation = await Conversation.findOne({
+                    userId: existingUser.userId,
+                    status: 'active'
+                }).sort({ updatedAt: -1 });
+
+                let contextMessage = `Welcome back, ${existingUser.profile.name}! I remember you now. It's so good to see you again!`;
+
+                if (previousConversation && previousConversation.messages.length > 0) {
+                    // Find the last user message to provide context
+                    const lastUserMessage = previousConversation.messages
+                        .filter(msg => msg.role === 'user')
+                        .slice(-1)[0];
+
+                    if (lastUserMessage) {
+                        contextMessage += ` Last time we talked, you mentioned: "${lastUserMessage.content.substring(0, 100)}${lastUserMessage.content.length > 100 ? '...' : ''}" How have things been since then?`;
+                    } else {
+                        contextMessage += ` How have you been since we last talked?`;
+                    }
+                } else {
+                    contextMessage += ` How have you been since we last talked?`;
+                }
+
+                return contextMessage;
             } else {
                 // New user - complete the onboarding
                 user.uniqueKey = userUniqueKey;
