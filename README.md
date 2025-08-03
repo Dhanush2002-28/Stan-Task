@@ -398,7 +398,6 @@ Uptime: 99.9%
 
 <div align="center">
 
-**Made with ❤️ by the STAN Development Team**
 
 [⭐ Star this repo](https://github.com/Dhanush2002-28/Stan-Task) • [🐛 Report Bug](https://github.com/Dhanush2002-28/Stan-Task/issues) • [✨ Request Feature](https://github.com/Dhanush2002-28/Stan-Task/issues)
 
